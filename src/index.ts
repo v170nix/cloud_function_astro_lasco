@@ -1,12 +1,12 @@
 import {LascoVideoCreator} from "./data/LascoVideoCreator";
-import {LascoImageRepository} from "./data/LascoImageRepository";
+import {LascoImageRepository, LascoImageType} from "./data/LascoImageRepository";
 
 
 module.exports.handler = async function (event, context) {
-    console.log("event", event);
-    console.log("context", context);
+    const fontsDir = './fonts/'
+    process.env.FONTCONFIG_PATH = fontsDir
 
-    const repo = new LascoImageRepository();
+    const repo = new LascoImageRepository(LascoImageType.C2, fontsDir);
     const creator = new LascoVideoCreator(repo);
     await creator.update()
 
