@@ -84,8 +84,8 @@ export class LascoImageRepository {
 
     public downloadImageToFile(time: number,
                                imageJpegOptions = {
-                                   // quality: 85,
-                                   // chromaSubsampling: '4:4:4'
+                                   quality: 85,
+                                   chromaSubsampling: '4:4:4'
                                }): ReadStream {
         const date = new Date(time);
         const url = this.getImageUrl(date);
@@ -110,7 +110,12 @@ export class LascoImageRepository {
         const day = pad(date.getUTCDay(), 2);
         const hours = pad(date.getUTCHours(), 2);
         const minutes = pad(date.getMinutes(), 2);
-        const text = `${year}-${month}-${day} ${hours}:${minutes} UTC`
+        const text = `${year}-${month}-${day} ${hours}:${minutes} UTC`;
+        let fill = "rgb(78, 0,0)";
+        if (this.type == LascoImageType.C3) {
+            fill = "rgb(8,49,177)";
+        }
+
 
         const svgText = `
 <svg width="1024" height="1024">
@@ -124,9 +129,9 @@ export class LascoImageRepository {
     .date {fill: #ffffff; font-size: 32px; font-family: "Roboto", sans-serif }
     .url {fill: #ffffff; font-size: 24px; font-family: "Roboto", sans-serif }
 </style>
-    <rect y="960" width="350" height="64" style="pointer-events: none; stroke: transparent; stroke-opacity: 0; fill: rgb(78, 0,0);"></rect>
+    <rect y="960" width="350" height="64" style="pointer-events: none; stroke: transparent; stroke-opacity: 0; fill: ${fill};"></rect>
     <text x="14" y="1004" text-anchor="start"  class="date">${text}</text>
-    <text x="1012" y="1012" text-anchor="end" class="url">sunexplorer.org</text>
+<!--    <text x="1012" y="1012" text-anchor="end" class="url">sunexplorer.org</text>-->
 </svg>`;
 
         const svgBuffer = Buffer.from(svgText);

@@ -1,46 +1,44 @@
-import {LascoImageRepository} from "./LascoImageRepository";
+import {LascoImageRepository, LascoImageType} from "./LascoImageRepository";
 import {YandexS3} from "../libs/YandexS3";
 import * as path from "path";
 import * as ffmpeg from "fluent-ffmpeg";
 import * as videoshow from "videoshow";
 import * as os from "os";
 import * as fs from "fs";
-import ReadableStream = NodeJS.ReadableStream;
 import {IO} from "../libs/IO";
 import * as ffmpegPath from 'ffmpeg-static'
 import * as ffprobePath from '@ffprobe-installer/ffprobe'
+import ReadableStream = NodeJS.ReadableStream;
 
 // const AWS = require('aws-sdk')
 
 export class LascoVideoCreator {
 
-    private readonly yandexS3: YandexS3
-    private readonly storageImageDirectory: string
-    private readonly storageVideoDirectory: string
+    private readonly yandexS3: YandexS3;
+    private readonly storageImageDirectory: string;
+    private readonly storageVideoDirectory: string;
 
     constructor(readonly imageRepository: LascoImageRepository) {
         this.yandexS3 = new YandexS3("sunexplorer")
-        this.storageImageDirectory =`lasco/image/${imageRepository.type}/`;
-        this.storageVideoDirectory =`lasco/video/${imageRepository.type}/`;
+        this.storageImageDirectory = `lasco/image/${imageRepository.type}/`;
+        this.storageVideoDirectory = `lasco/video/${imageRepository.type}/`;
     }
 
-    async update() {
+    async update(): Promise<number[]> {
         const dates: number[] = await this.imageRepository.getRemoteList(new Date(), 100);
         const files = await this.yandexS3.getSmallList(this.storageImageDirectory);
         if (dates.length < 100) return;
 
-        try {
-            const paths = await this.getImages(dates);
-            paths.sort();
-            await this.deleteOldImages(dates, files);
-            await this.createVideo(this.storageVideoDirectory + "lasco_video.mp4", paths)
-
-            console.log("Success");
-            return ""; // For unit tests.
-        } catch (err) {
-            console.log("Error", err);
-        }
-
+        const paths = await this.getImages(dates);
+        paths.sort();
+        await this.deleteOldImages(dates, files);
+        await this.createVideo(
+            this.storageVideoDirectory + "lasco_video.mp4",
+            paths,
+            dates[0],
+            dates[dates.length - 1]
+        )
+        return [dates[0],dates[dates.length - 1]];
     }
 
     private async deleteOldImages(dates: number[], files: string[]) {
@@ -56,15 +54,15 @@ export class LascoVideoCreator {
 
     private async getImages(dates: number[]): Promise<string[]> {
         const paths: string [] = [];
-        await Promise.all(dates.map( async (date) => {
+        await Promise.all(dates.map(async (date) => {
             const filePath = this.storageImageDirectory + date.toString()
             if (!await this.yandexS3.fileExists(filePath)) {
                 const stream = this.imageRepository.downloadImageToFile(date)
                 await this.yandexS3.upload(filePath, stream,
                     null,
-                     "image/jpeg",
-                    "public, max-age=31536000, s-maxage=31536000")
-            }
+                    "image/jpeg",
+                    "public, max-age=345600, s-maxage=345600"
+                )}
             paths.push(filePath)
         }))
         return paths
@@ -72,11 +70,14 @@ export class LascoVideoCreator {
 
     private async createVideo(
         videoPath: string,
-        imagePaths: string[]
+        imagePaths: string[],
+        dateBegin: number,
+        dateEnd: number
     ) {
         ffmpeg.setFfmpegPath(ffmpegPath);
         ffmpeg.setFfprobePath(ffprobePath.path)
-        const crf = 24;
+        let crf = 24;
+        if (this.imageRepository.type == LascoImageType.C3) crf = 27;
 
         const videoOptions = {
             fps: 30,
@@ -133,9 +134,21 @@ export class LascoVideoCreator {
         await this.yandexS3.upload(videoPath, fs.createReadStream(targetTempFilePath),
             null,
             "video/mp4",
-            null,
-            expires
+            "public, max-age=43200",
+            expires,
+            {
+                "begin_time": dateBegin.toString(),
+                "end_time": dateEnd.toString()
+            }
         )
+
+        fs.unlinkSync(targetTempFilePath);
+
+        for (const pathName of imagePaths) {
+            const fileName = path.basename(pathName);
+            const tempFilePath = path.join(os.tmpdir(), fileName);
+            fs.unlinkSync(tempFilePath);
+        }
 
     }
 

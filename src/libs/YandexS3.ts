@@ -10,6 +10,8 @@ import {
 } from "@aws-sdk/client-s3";
 import {ReadStream} from "fs";
 import {ObjectIdentifier} from "@aws-sdk/client-s3/dist-types/models/models_0";
+import {Readable} from "stream";
+import ReadableStream = NodeJS.ReadableStream;
 
 // noinspection JSUnusedGlobalSymbols
 export class YandexS3 {
@@ -19,7 +21,7 @@ export class YandexS3 {
     ) {}
 
     async upload(path: string,
-                 readStream: ReadStream,
+                 readable: Readable | ReadableStream | Blob,
                  contentEncoding?: string,
                  contentType?: string,
                  cacheControl?: string,
@@ -30,7 +32,7 @@ export class YandexS3 {
         await s3Client.send(new PutObjectCommand({
             Bucket: this.bucket,
             Key: path,
-            Body: readStream,
+            Body: readable,
             CacheControl: cacheControl,
             ContentEncoding: contentEncoding,
             ContentType: contentType,
