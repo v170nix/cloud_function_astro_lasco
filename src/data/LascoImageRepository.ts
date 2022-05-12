@@ -107,7 +107,7 @@ export class LascoImageRepository {
     ): ReadStream {
         const year = date.getUTCFullYear();
         const month = pad(date.getUTCMonth() + 1, 2);
-        const day = pad(date.getUTCDay(), 2);
+        const day = pad(date.getUTCDate(), 2);
         const hours = pad(date.getUTCHours(), 2);
         const minutes = pad(date.getMinutes(), 2);
         const text = `${year}-${month}-${day} ${hours}:${minutes} UTC`;
