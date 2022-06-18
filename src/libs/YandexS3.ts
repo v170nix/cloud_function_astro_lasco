@@ -6,9 +6,9 @@ import {
     GetObjectCommand,
     GetObjectCommandOutput,
     HeadObjectCommand,
-    ListObjectsCommand, PutObjectCommand
+    ListObjectsCommand,
+    PutObjectCommand
 } from "@aws-sdk/client-s3";
-import {ReadStream} from "fs";
 import {ObjectIdentifier} from "@aws-sdk/client-s3/dist-types/models/models_0";
 import {Readable} from "stream";
 import ReadableStream = NodeJS.ReadableStream;

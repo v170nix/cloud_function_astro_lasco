@@ -12,7 +12,6 @@ export class AppLascoMetadataRepository {
     }
 
     async saveMetadata(metadata: AppLascoMetadata) {
-        JSON.stringify(metadata)
         await this.yandexS3.upload(
             this.storageDirectory + "video_metadata.json",
             Readable.from([JSON.stringify(metadata)]),
