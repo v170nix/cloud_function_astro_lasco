@@ -1,8 +1,8 @@
 import got from "got";
 import {pad} from "../util/pad";
 import * as cheerio from "cheerio";
-import sharp = require("sharp");
 import {ReadStream} from "fs";
+import sharp = require("sharp");
 
 export enum LascoImageType {
     C2 = 'c2', C3 = 'c3'
@@ -24,28 +24,39 @@ export class LascoImageRepository {
         day1.setDate(date.getDate() - 1);
         const day2 = new Date();
         day2.setDate(date.getDate() - 2);
+        try {
+            const dates0 = await this.getDates(date);
+            const dates1 = await this.getDates(day1);
+            const dates2 = await this.getDates(day2);
+            return dates0
+                .concat(dates1, dates2)
+                .sort((n1, n2) => n2 - n1)
+                .slice(0, count)
+                .sort((n1, n2) => n1 - n2);
+        } catch (e) {
+            console.error("error", e);
+            throw e;
+        }
 
-        const [dates0, dates1, dates2] = await Promise.all([
-            this.getDates(date),
-            this.getDates(day1),
-            this.getDates(day2)
-        ]);
-        return dates0
-            .concat(dates1, dates2)
-            .sort((n1, n2) => n2 - n1)
-            .slice(0, count)
-            .sort((n1, n2) => n1 - n2);
+        // const [dates0, dates1, dates2] = await Promise.all([
+        //     this.getDates(date),
+        //     this.getDates(day1),
+        //     this.getDates(day2)
+        // ]);
     }
 
     async getDates(date: Date): Promise<number[]> {
         try {
             const url = this.getUrlList(date);
+            console.log("get Dates", date);
             const response = await got(url, {responseType: "text", resolveBodyOnly: true});
+            console.log("data ok", date);
             const stringList = LascoImageRepository.parseListItems(response);
             return stringList.map(value => {
                 return LascoImageRepository.parseDate(value)
             });
         } catch (e) {
+            console.error("error", e);
             return [];
         }
     }

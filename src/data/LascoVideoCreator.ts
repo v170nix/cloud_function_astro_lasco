@@ -6,8 +6,8 @@ import * as videoshow from "videoshow";
 import * as os from "os";
 import * as fs from "fs";
 import {IO} from "../libs/IO";
-import * as ffmpegPath from 'ffmpeg-static'
-import * as ffprobePath from '@ffprobe-installer/ffprobe'
+// import * as ffmpegPath from 'ffmpeg-static'
+// import * as ffprobePath from '@ffprobe-installer/ffprobe'
 import ReadableStream = NodeJS.ReadableStream;
 
 // const AWS = require('aws-sdk')
@@ -74,8 +74,8 @@ export class LascoVideoCreator {
         dateBegin: number,
         dateEnd: number
     ) {
-        ffmpeg.setFfmpegPath(ffmpegPath);
-        ffmpeg.setFfprobePath(ffprobePath.path)
+        ffmpeg.setFfmpegPath('./ffmpeg');
+        ffmpeg.setFfprobePath('./ffprobe')
         let crf = 24;
         if (this.imageRepository.type == LascoImageType.C3) crf = 27;
 
